@@ -91,3 +91,22 @@ for match in matches:
 패턴 긁어오는건 만들었으니까, 긁어온 패턴 중 겹치는거, finditer 다 돌리기.
 match1.end()와 match2.start() 같으면 이웃. counter 2부터 1씩
 원본 string에 re.sub '(?:pattern)+' 'pattern' 으로 변환.
+
+연속중복된 pattern 있을시, 중복개수샌다.
+연속중복 더이상 안될 시, 중복개수+pattern으로 re.sub
+re.sub 적용한 string에서 pattern list에 남은 pattern들 계속 적용.
+pattern list 다 통과시, 결과값 len 비교. 짧을시 교체.
+모든 경우의수 보기위해 pattern list 하나씩 줄여가며 위의 과정 반복.
+
+처리된 pattern 부분을 다시 처리하는 오류가 생긴다. 처리된 pattern 부분은 제거하고 새로운 string을 지정해서 돌려야하겠다.
+또 다른 문제
+ababcdabababababcd 이런 string에서
+처음 ab2회 반복되는것만 보기 때문에
+2abcd2abcd가 된다.
+내 접근법이 잘못된것 같다. 매번 반복횟수마다 바꿔버리는게 아니라 하나씩 바꿔야 하는데,
+
+아니면, 작은 pattern부터 큰걸로 순서를 나열하면 되려나???
+
+* f-string 안에 {}쓰는 regex 쓰려면 {{}} 이렇게 double 중괄호로 escape 가능.
+
+된거같기도하고??????
