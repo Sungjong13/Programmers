@@ -1,0 +1,93 @@
+코딩테스트 연습 2020 KAKAO BLIND RECRUITMENT 문자열 압축
+
+string으로부터 pattern 받아 regex표현식으로 반복되는 pattern 확인 및 처리
+
+string to pattern
+- slice?
+- split?
+
+regex pattern detection?
+
+
+
+압축이 의미없는 경우.
+len 1의 경우 의미없음. 1a1b1a1b
+len > totallen/2 의 경우 의미없음. x1abcde
+
+
+len 2 이상의 작은 단위로 grouping이 무조건 이득인가? X
+ababcdcdababcdcd일때,
+ab,cd 로 가져오면 2ab2cd2ab2cd = 12
+abab,cdcd로 가져오면 꽝
+ababcdcd로 가져오면 2ababcdcd = 9
+아님
+
+반대로 큰 단위로 grouping이 무조건 이득?
+abababab일때,
+ab로 가져오면 4ab=3
+abab로 가며오면 2abab=5
+아님.
+
+경우를 다 만들어보고 len 비교를 해야할까?
+
+
+처음부터 string을 list처럼 생각해서 indexing으로 접근,분석하자.
+
+pattern 경우의 수
+이웃한 두 글자씩 묶기
+이웃한 세 글자씩 묶기
+...
+totallen/2+1 글자씩 묶는건 의미없으므로 거기까지.
+
+
+patten이 하나 이상 발견될 시 pattern_list 넣고 활용
+
+
+pattern_list 경우의 수
+string에 pattern n개 연속 있을 때 (isin),
+n+pattern으로 변환.
+다른 pattern 계속 적용. 더이상 적용할 pattern 없을시 result_list append.
+pattern 경우의수 파악위해 사용한 pattern 튜플로 기록?
+위에서 설명한 이유로, 작은거부터든 큰거부터든 상관없을듯.
+
+result_list중 len가장 짧은것 return.
+
+
+#생각해보니까 pattern_list 만들때 중간에서 pattern 꺼낼 때, 양 옆에 남는 글자들 길이가 pattern보다 짧으면 의미가 없다.
+abc defgh ijk 여기서 defgh 가져오면 의미 없
+
+#0:2,2:4,4:6,.... 이렇게 잘라서 순서대로 append하면 이웃한 pattern 분석 가능할듯.
+
+#걍 list(range(a,maxstrlen,i)) 이렇게 해서 i를 바꾸면 원하는 slicing parameter 가져올 수 있겠다.
+#여기다 a는 for a in range(i) - V됐다
+
+20220812 하루지나고보니 햇갈린다. 하나씩 보자
+len(string)=16일때
+mltp=2~8
+startindex=range(mltp)
+indexrange=[0,2,4,6,8...],[1,3,5,7,9...],[0,2,5,8,...]...[0,8,16],[1,9][2,10]...[7,15]
+
+
+np.where로 각 pattern index 가져올 수 있다.
+index끼리 붙어있으면 이웃한 동일 pattern.
+적용법 불분명...
+
+
+
+<새로운 아이디어>
+문자 * 숫자..
+아무래도 regex에 정답이 있을 것 같다.
+
+다시 생각해보니, (ab)+ 로 이웃하는 반복단어 찾을 수 있잖슴
+
+vv요래해보니까 감이 온다.
+string="ababcdcdababcdcd"
+regex='(?:ab)'
+
+matches=re.finditer(regex,string)
+for match in matches:
+    print(match,match.start(),match.end(),match.group(),sep='\t')
+
+패턴 긁어오는건 만들었으니까, 긁어온 패턴 중 겹치는거, finditer 다 돌리기.
+match1.end()와 match2.start() 같으면 이웃. counter 2부터 1씩
+원본 string에 re.sub '(?:pattern)+' 'pattern' 으로 변환.
