@@ -1,0 +1,258 @@
+
+코딩테스트 연습
+2022 KAKAO TECH INTERNSHIP
+두 큐 합 같게 만들기
+
+요약
+두개의 숫자 리스트(queue) 주어짐.
+각 리스트 안의 숫자들 합이 같아지도록 pop, insert을 진행할 것인데,
+pop은 리스트 첫번째 index만, insert는 리스트 마지막에만 할 수 있다.
+이렇게 pop,insert 한번씩 하면 작업을 한번 한걸로 치고,
+두 리스트 안의 숫자 합이 같아지도록 하는데 필요한 최소 횟수 반환해라.
+
+초견 생각
+전체 숫자의 합이 무조건 짝수인가? 아니네. 홀수면 -1을 return하라고 한다.
+짝수여도 반으로 안나눠질 수 있겠다.
+가장 큰 숫자가 나머지들의 합보다 큰 경우 [50] [1,2,3]
+그냥 안되는 경우 [5] [4,3]
+안되는 경우를 어떻게 거를지도 중요하겠다.
+
+큰 숫자부터 합이 작은 리스트에 더해나가면 되는경우를 찾을 수 있겠다.
+다 더했을 때 합이 서로 다르면 안되는 경우가 되겠다.
+이렇게 간단할까? 될거같다..
+
+
+우선 전체 숫자 합의 /2가 되도록 하는 숫자의 조합을 고려해야겠다.
+가장 큰 숫자가 oversum되기 쉬우니까, 큰 숫자를 ..... 쓸데없는 생각같다.
+
+
+일단 주어진 입출력 예는 합이 큰 리스트에서 합이 작은 리스트로 옮기면 최소 옮기는 횟수가 나온다.
+하지만 이 방식으로 했을 때 모든 경우에서 최소 옮기는 횟수가 나올까?
+[1,1,50] [3,1,50] 나온다.
+어.. 될거같다.
+
+
+pop,insert 횟수를 반환하는건데, 꼭 시뮬레이션을 돌려야 알 수 있을까?
+큐 길이가 엄청 긴데 시뮬레이션 한참 돌릴지도 모른다.
+아니다 시뮬레이션을 돌려서 되는지 안되는지를 확인하는게 아니니까, 최대 len(queue1+queue2)-1의 시뮬레이션을 돌리게 된다. 즉 599,999회.... 너무 많나..?
+
+일단 해보자.
+
+
+궁금증: 왜 answer=-2라고 해놨을까? =0도 아니고 굳이 -를 하나 더 눌러가면서 -2라고 쓸까? 일종의 힌트일까?
+
+
+첫시도
+def solution(queue1, queue2):
+    #check if the queues are equally distributable.
+    if len(queue1+queue2)%2==1:
+        return -1
+    else:
+        list1=[]
+        list2=[]
+        for i in sorted(queue1+queue2,reverse=True):
+            if sum(list1)>=sum(list2):
+                list2.append(i)
+            else:
+                list1.append(i)
+        if sum(list1)!=sum(list2):
+            return -1
+    #distribute queues with counter(answer).
+    answer = 0
+    while sum(queue1)!=sum(queue2):
+        if sum(queue1)<sum(queue2):
+            queue1.append(queue2.pop(0))
+            answer+=1
+        else:
+            queue2.append(queue1.pop(0))
+            answer+=1
+            
+    return answer
+
+33점.
+
+문제점
+역시 엄청 오래걸린다. 대부분 시간초과.
+얼마안걸린 테스트7도 실패떴다.
+
+역시 시뮬레이션 안돌리고 횟수를 구할 방법이 있을거같다.
+pop append 해서 sum 하지말고 리스트 유지한채로 더하면 속도 개선 되려나?
+한쪽이 총합/2 랑 같아지면 되는거니까, 두개의 리스트 길게 합해서, 합이 총합/2되는 index 범위 구하고, 초기 index값과의 차이를 구하면 될지도?
+두개 리스트 하면 -값으로 index가 내려갈지도 모르니 queue2+queue1+queue2 해서 queue1 index로 구하자.
+잘못생각했다. pop append하는거니까 index가 뒤로만 이동한다. queue1+queue2+queue1해서 queue1 index로 구해야한다.
+
+산술 오버플로우도 보니까 숫자가 너무 커지면 생기는 문제같다. python은 자동으로 자료형을 변환해 문제가 발생하진 않지만 어쩌면 속도에는 문제가 생길지도 모르겠다. 첫부분에 queue 반으로 나눠지는지 계산하는거도 덧셈뺄셈으로 0이 되는지 비교해서 숫자를 0 근처에서 움직이게 해야겠다.
+
+
+2차시도
+def solution(queue1, queue2):
+    #check if the queues are equally distributable.
+    total_list=queue1+queue2
+    if len(total_list)%2==1:
+        return -1
+    else:
+        indicator=0
+        for i in sorted(total_list,reverse=True):
+            if indicator<=0:
+                indicator+=i
+            else:
+                indicator-=i
+        if indicator!=0:
+            return -1
+    #connect three queues into single list, compare list index from initial position.
+    i=0
+    j=len(queue1)+1
+    num_list=queue1+queue2+queue1
+    target_sum=int(sum(total_list)/2)
+    while True:
+        if sum(num_list[i:j])==target_sum:
+            answer=i+j-len(queue1)
+            return answer
+        elif sum(num_list[i:j])<target_sum:
+            j+=1
+        else:
+            i+=1
+
+43.3점
+결과가 더 빠르게 났지만, 시간초과 그대로 있다.
+
+좀 멍청한 시도같다. 위쪽은 빨라졌지만, 아래쪽은 sum 그대로 매번 쓰니까 느리다. 아래쪽도 0에 가까운 숫자들로 놀면 좋겠다.
+
+*** int()으로 굳이 바꾼 이유: float은 32비트를 기본으로 사용한다고 봤다. python이 int를 어떻게 저장하는지는 잘 모르겠지만, float 보다는 적은 비트를 사용할 것 같다. 속도를 작게나마 빠르게해주지 않을까?
+찾아보니 python은 상황에 맞게 적절한 비트를 사용하나보다. int사용해서 속도가 빨라졌느냐는 다른 문제지만 일단 저장공간은 적게 소모하는 코드를 짰다.
+Python, however, doesn’t use a fixed number of bit to store integers. Instead, Python uses a variable number of bits to store integers. For example, 8 bits, 16 bits, 32 bits, 64 bits, 128 bits, and so on.
+출처: https://www.pythontutorial.net/advanced-python/python-integers/
+
+
+3차시도
+def solution(queue1, queue2):
+    #check if the queues are equally distributable.
+    total_list=queue1+queue2
+    if len(total_list)%2==1:
+        return -1
+    else:
+        indicator=0
+        for i in sorted(total_list,reverse=True):
+            if indicator<=0:
+                indicator+=i
+            else:
+                indicator-=i
+        if indicator!=0:
+            return -1
+    #add everything from beginning, sub target value, add or sum one by one.
+    indicator2=sum(queue1)-int(sum(total_list)/2)
+    answer=0
+    total_list2=queue2+queue1
+    while indicator2!=0:
+        if indicator2>0:
+            indicator2-=total_list.pop(0)
+        else:
+            indicator2+=total_list2.pop(0)
+        answer+=1
+    return answer
+
+70점 
+
+많이 빨라졌는데 아직도 시간초과가 뜬다.
+런타임에러도 떴다...???
+테스트7은 왜 계속 실패가 뜰까?
+
+
+도대체 어떤 값을 입력받길래 시간초과가 뜰까?
+아무래도 테스트7을 잡으면 될거같다. 한쪽 queue가 비어있거나 한 그런 값을 입력받는게 아닐까?
+빈 리스트 sum()은 문제없고, .pop()은 문제되겠지만, total_list로 만들었으니 문제없다. 빈 queue를 받는건 아닌듯.
+
+내가 구한게 최소횟수가 아닌 경우가 있나?
+
+오류 한가지 발견:
+queue1,queue2,queue1의 숫자들을 다 더한 값은 포함하는데,
+queue2,queue1,queue2의 숫자들을 다 더한 값을 포함하지 않는다.
+이 문제는 queue1,queue2가 연속으로 나열된 list에서 합이 총합의 반이 되는 범위를 구하는거나 다름없는데,
+현재 queue1+queue2+queue1을 한 모양이기 때문에 queue2의 일부숫자, queue1전체, queue2의 일부숫자를 더한 값을 고려하지 못한다.
+
+아래처럼 수정하고 돌려봄
+    #add everything from beginning, sub target value, add or sum one by one.
+    indicator2=sum(queue1)-int(sum(total_list)/2)
+    answer=0
+    total_list.extend(queue1)
+    total_list2=queue2+queue1+queue2
+    while indicator2!=0:
+        if indicator2>0:
+            indicator2-=total_list.pop(0)
+        else:
+            indicator2+=total_list2.pop(0)
+        answer+=1
+    return answer
+
+66.7점
+
+그래도 7번 실패, 11번 런타임에러
+오히려 점수가 줄었다. 리스트가 길어지면서 점수가 줄었다..
+리스트 최대 value 제한이 있나? 했는데 sys.maxsize 	9223372036854775807로 나옴.
+
+리스트 길이를 짧게 유지하면서 사용 가능한 방법이 있을까?
+
+runtime error 는 
+크게 3가지가 있습니다.
+0으로 나누었을 때 발생하는 zerodivisionerror
+인덱싱을 할 때 길이 이상으로 했을 때 발생하는 IndexError
+선언하지 않은 변수를 사용할 때 발생하는 NameError가 발생합니다.
+출처: https://balmostory.tistory.com/40
+
+11번은 아마도 pop할 대상이 없어 생긴 indexError런타임 에러가 아닐까 싶다.
+
+리스트 길이를 더 늘려보니 60점 나온다.
+
+pop은 찾아보니 엄청 느리다고 한다. index까지 사용하면 더 느리다고 한다.
+list의 첫번째 value를 지우면 뒤에 모든 value들이 하나씩 앞으로 scoot하니까 느리다고한다.
+출처: https://www.reddit.com/r/learnpython/comments/p98v56/i_was_surprised_at_how_slow_listpop_is_and/
+
+
+list들을 뒤집어서 뒤쪽에서부터 pop하게하면 빨라지겠다.
+
+아래부분 수정 다시
+#add everything from beginning, sub target value, add or sum one by one.
+    indicator2=sum(queue1)-int(sum(total_list)/2)
+    answer=0
+    total_list=(total_list+queue1)[::-1]
+    total_list2=(queue2+queue1+queue2)[::-1]
+    while indicator2!=0:
+        if indicator2>0:
+            indicator2-=total_list.pop()
+        else:
+            indicator2+=total_list2.pop()
+        answer+=1
+    return answer
+
+83.3점
+엄청 빨라졌다! 시간초과 더이상 없다. 리스트 길이에 대비해 점수 낮아지는 원인도 이것같다.
+아직 테스트7은 실패, 테스트11은 런타임에러.
+
+
+문제를 다시 읽어보고 본 점
+두 queue는 길이가 같다. #맨앞에 len(total_list)%2==1: 불필요
+각 queue의 원소는 10^9 까지 클 수 있다.
+
+
+어쩌면 정확히 반으로 안나눠지는 경우를 잘못판단하는 것 같다.
+하나의 숫자만 갖는건 가능한데, 두개의 숫자를 하나의 리스트에 포함시키려면 그 두 숫자 사이의 다른 숫자도 다 포함시켜야한다.
+내 방식은 두개의 숫자만 골라 리스트에 포함시킬 수 있다.
+
+와! 정답!
+def solution(queue1, queue2):
+    indicator2=sum(queue1)-int(sum(queue1+queue2)/2)
+    answer=0
+    sub_list=(queue1+queue2+queue1)[::-1]
+    add_list=(queue2+queue1+queue2)[::-1]
+    while indicator2!=0:
+        try:
+            if indicator2>0:
+                indicator2-=sub_list.pop()
+            else:
+                indicator2+=add_list.pop()
+        except:
+            return -1
+        answer+=1
+    return answer
+
+생각보다 너무 간단하게 고쳐졌다. 앞에 복잡한 부분은 전혀 필요 없었다.
