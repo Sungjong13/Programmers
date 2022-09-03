@@ -1,0 +1,88 @@
+2019 KAKAO BLIND RECRUITMENT 실패율
+
+실패율 = 스테이지별 멈춰있는 사람 수 / 스테이지별 클리어한 사람 수
+실패율이 같다면 낮은 스테이지 먼저 표기
+스테이지 도달한 사람 없으면 실패율은 0.
+
+
+초견
+실패율이 float으로 들어간다는 점이 조금 거슬린다.
+스테이지별 멈춰있는 사람 수 구할 때 count쓸 수도 있겠지만 느리지 않을까?
+dictionary에 하나씩 넣고 sort하면 될거같다.
+
+그냥 우선 숫자 새서 실패율 계산하고 실패율 dictionary sort해서 반환?
+
+
+아무도 클리어 못했으면 division by zero 오류.
+if문으로 뺄까?
+
+dictionary 에 if문 넣으니 계속 syntax error가 뜬다. dictionary comprehension에 대한 이해도 부족때문인지도 모른다. 풀어서 써보자.
+
+comprehension 빼고 풀어쓰니 잘 된다. 나중에 comprehension도 다시 해보자
+
+
+def solution(N, stages):
+    clear_dic = {x:0 for x in range(1,N+2)}
+    notclear_dic = {x:0 for x in range(1,N+2)}
+    for stage in stages:
+        notclear_dic[stage]+=1
+        for j in range(1,stage):
+            clear_dic[j]+=1
+    failrate_dic = {}
+    for i in range(1,N+1):
+        if clear_dic[i]!=0:
+            failrate_dic[i]=notclear_dic[i]/clear_dic[i]
+        else:
+            failrate_dic[i]=501
+    return [x[0] for x in sorted(failrate_dic.items(), key=lambda x:(-x[1],x[0]))]
+
+74.1점
+실패율이 스테이지에 도달했으나 아직 클리어하지 못한 플레이어의 수 / 스테이지에 도달한 플레이어 수 인데
+나는 실패율 = 스테이지 클리어 못한 수 / n-1스테이지 도달한 수
+로 만든 것 같다.
+그래서 for j in range(1,stage+1)으로 바꿨는데 점수는 70.4점으로 낮아지는 기이함.
+[2,2,2,6]같은 경우 2스테이지 실패율 3/4. 6스테는 1 실패율... 기존의 방식으론 2스테 3, 6스테 1. 입출력 예 설명을 보면 전자의 방법으로 한듯.
+
+
+뭔가 새로운 생각이 날거같다
+만약 n스테이지까지 왔다고 하면, n까지의 모든 스테이지에 도달했고, n번째 스테이지만 실패.
+n개의 1이 있는 리스트를 계속 더해줄 순 없을까? 어차피 낮은 스테이지일수록 분모는 커지고, 분자는 count에 따라 다르다.
+실패율이 1 초과할 수 없다
+오렐리가 실패율을 잘못 설정한것같다. 6스테에 1명이 도달하고 1명이 실패하면 실패율이 최고인 1이 된다.
+[2,2,2,2,3,4]의 경우, 2스테는 4/6, 3스테는 1/2, 4스테는 1.
+하지만 끝까지 클리어한 사람이 있으면, 1의 실패율은 불가능.
+뭔가 쉬운 방법이 있을 것 같은데 안떠오르니까 일단 생각했던 dictionary 2개 쓰는 방법 시도해야겠다.
+
+
+위의 오류 고치고, 분모가 0이 되는 경우는 아무도 클리어 못한 경우이기 때문에 if clear_dic[i]==0 failrate_dic[i]=0 으로 해주니 해결됐다.
+
+
+
+
+다른사람 풀이
+count로 스테이지 수 가져온게 가장 위에 있네.
+
+내가 생각했던 '어쩌면 더 쉬운 방법' 이 다른사람 풀이중에 있었다.
+def solution(N, stages):
+    fail = {}
+    for i in range(1,N+1):
+        try:
+            fail_ = len([a for a in stages if a==i])/len([a for a in stages if a>=i])
+        except:
+            fail_ = 0
+        fail[i]=fail_
+    answer = sorted(fail, key=fail.get, reverse=True)
+    return answer
+
+스테이지 숫자가 같으면 실패한거고, 스테이지 숫자가 더 높으면 성공한거니까. 리스트로 만들어서 len끼리 계산하는건 생각 못했다. 
+효율적인지는 둘째치고.
+
+
+
+배운거
+dictionary를 value로 sort하고 key로 sort하려면 다음처럼 쓰면 된다.
+sorted(y.items(), key=lambda x: (x[1],x[0]), reverse=True)
+list comprehension에 if else 쓰려면 for 앞에 와야하고, if 만 쓰는거면 for 뒤에 가야한다.
+dictionary를 sort에 key=lambda x:-x 쓰면 reverse=True와 같은 효과. 그러므로 dictionary의 value를 descending으로 sort하고 key를 ascending으로 sort 하고자 하면 key=lambda x: (-x[1],x[0])
+
+ 
